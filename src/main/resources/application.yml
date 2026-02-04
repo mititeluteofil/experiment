@@ -1,0 +1,61 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: demo
+
+  # Datasource - H2 in-memory by default
+  datasource:
+    url: jdbc:h2:mem:demodb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # JPA / Hibernate
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  # H2 Console (dev only)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # Spring Cloud Config - disabled for standalone mode
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+
+# Spring Security - permit all by default for development
+# Override with a SecurityFilterChain bean for production
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+# Eureka - disabled for standalone mode
+eureka:
+  client:
+    enabled: false
+
+# Resilience4j defaults
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+
+logging:
+  level:
+    root: INFO
+    com.example.demo: DEBUG
