@@ -2,11 +2,14 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.AccountResponse;
 import com.example.demo.dto.CreateAccountRequest;
+import com.example.demo.dto.ReportPeriod;
+import com.example.demo.dto.ReportResponse;
 import com.example.demo.dto.TransactionResponse;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.model.BankAccount;
 import com.example.demo.model.User;
 import com.example.demo.service.BankAccountService;
+import com.example.demo.service.ReportService;
 import com.example.demo.service.TransactionService;
 import com.example.demo.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ import java.util.List;
 public class BankAccountController {
 
     private final BankAccountService bankAccountService;
+    private final ReportService reportService;
     private final TransactionService transactionService;
     private final UserService userService;
 
@@ -75,5 +79,29 @@ public class BankAccountController {
                 .stream()
                 .map(tx -> TransactionResponse.from(tx, id))
                 .toList();
+    }
+
+    /**
+     * Deliberately naive report generation:
+     * - Loads all transactions into memory and aggregates in Java (no SQL aggregation)
+     * - No caching — same report recomputed fresh on every request
+     * - Synchronous — blocks the request thread for the entire computation
+     */
+    @GetMapping("/{id}/reports")
+    public ReportResponse report(
+            @PathVariable Long id,
+            @RequestParam ReportPeriod period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            Principal principal) {
+
+        User user = userService.findByEmail(principal.getName());
+        BankAccount account = bankAccountService.getById(id);
+
+        if (!account.getUser().getId().equals(user.getId())) {
+            throw new BadRequestException("You do not own this account");
+        }
+
+        return reportService.generate(id, period, from, to);
     }
 }
