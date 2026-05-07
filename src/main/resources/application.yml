@@ -59,3 +59,15 @@ logging:
   level:
     root: INFO
     com.example.demo: DEBUG
+
+langchain4j:
+  anthropic:
+    chat-model:
+      api-key: ${ANTHROPIC_API_KEY}
+      model-name: claude-sonnet-4-6
+      max-tokens: 4096
+      temperature: 0.0
+
+agent:
+  max-transfer-amount: 10000
+  memory-window: 20
