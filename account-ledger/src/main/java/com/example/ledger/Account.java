@@ -21,4 +21,15 @@ public class Account {
     long balance() {
         return balance;
     }
+
+    void add(long amount) {
+        balance += amount;
+    }
+
+    void subtract(long amount) {
+        if (balance < amount) {
+            throw new IllegalStateException("Insufficient funds on " + id);
+        }
+        balance -= amount;
+    }
 }

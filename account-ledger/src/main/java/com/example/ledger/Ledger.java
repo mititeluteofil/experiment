@@ -22,15 +22,23 @@ public class Ledger {
     }
 
     public void deposit(String accountId, long amount) {
-        throw new UnsupportedOperationException("TODO");
+        requirePositive(amount);
+        require(accountId).add(amount);
     }
 
     public void withdraw(String accountId, long amount) {
-        throw new UnsupportedOperationException("TODO");
+        requirePositive(amount);
+        require(accountId).subtract(amount);
     }
 
     public void transfer(String fromId, String toId, long amount) {
         throw new UnsupportedOperationException("TODO");
+    }
+
+    private static void requirePositive(long amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive: " + amount);
+        }
     }
 
     private Account require(String accountId) {
