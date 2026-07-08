@@ -18,17 +18,26 @@ public class Ledger {
     }
 
     public long balanceOf(String accountId) {
-        return require(accountId).balance();
+        Account account = require(accountId);
+        synchronized (account) {  // reads take the monitor too, for visibility
+            return account.balance();
+        }
     }
 
     public void deposit(String accountId, long amount) {
         requirePositive(amount);
-        require(accountId).add(amount);
+        Account account = require(accountId);
+        synchronized (account) {
+            account.add(amount);
+        }
     }
 
     public void withdraw(String accountId, long amount) {
         requirePositive(amount);
-        require(accountId).subtract(amount);
+        Account account = require(accountId);
+        synchronized (account) {
+            account.subtract(amount);
+        }
     }
 
     public void transfer(String fromId, String toId, long amount) {
@@ -38,8 +47,12 @@ public class Ledger {
         requirePositive(amount);
         Account from = require(fromId);
         Account to = require(toId);
-        from.subtract(amount);
-        to.add(amount);
+        synchronized (from) {  // caller-supplied lock order: deadlock waiting for crossing transfers
+            synchronized (to) {
+                from.subtract(amount);
+                to.add(amount);
+            }
+        }
     }
 
     private static void requirePositive(long amount) {
