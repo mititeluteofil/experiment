@@ -29,6 +29,7 @@ public class Ledger {
         Account account = require(accountId);
         synchronized (account) {
             account.add(amount);
+            account.record(Entry.Type.DEPOSIT, amount);
         }
     }
 
@@ -37,6 +38,14 @@ public class Ledger {
         Account account = require(accountId);
         synchronized (account) {
             account.subtract(amount);
+            account.record(Entry.Type.WITHDRAWAL, amount);
+        }
+    }
+
+    public java.util.List<Entry> statement(String accountId) {
+        Account account = require(accountId);
+        synchronized (account) {
+            return account.entries();
         }
     }
 
@@ -54,6 +63,8 @@ public class Ledger {
             synchronized (second) {
                 from.subtract(amount);
                 to.add(amount);
+                from.record(Entry.Type.TRANSFER_OUT, amount);
+                to.record(Entry.Type.TRANSFER_IN, amount);
             }
         }
     }

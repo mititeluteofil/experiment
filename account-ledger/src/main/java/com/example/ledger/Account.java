@@ -8,6 +8,7 @@ public class Account {
 
     private final String id;
     private long balance;
+    private final java.util.List<Entry> entries = new java.util.ArrayList<>();
 
     public Account(String id, long initialBalance) {
         this.id = id;
@@ -31,5 +32,14 @@ public class Account {
             throw new IllegalStateException("Insufficient funds on " + id);
         }
         balance -= amount;
+    }
+
+    // call only while holding this account's monitor: entry and balance must agree
+    void record(Entry.Type type, long amount) {
+        entries.add(new Entry(type, amount, balance));
+    }
+
+    java.util.List<Entry> entries() {
+        return java.util.List.copyOf(entries);
     }
 }
