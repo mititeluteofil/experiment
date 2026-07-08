@@ -32,7 +32,14 @@ public class Ledger {
     }
 
     public void transfer(String fromId, String toId, long amount) {
-        throw new UnsupportedOperationException("TODO");
+        if (fromId.equals(toId)) {
+            throw new IllegalArgumentException("Cannot transfer to the same account: " + fromId);
+        }
+        requirePositive(amount);
+        Account from = require(fromId);
+        Account to = require(toId);
+        from.subtract(amount);
+        to.add(amount);
     }
 
     private static void requirePositive(long amount) {

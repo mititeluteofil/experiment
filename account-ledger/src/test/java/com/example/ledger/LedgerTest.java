@@ -69,4 +69,35 @@ class LedgerTest {
         assertThrows(IllegalArgumentException.class, () -> ledger.withdraw("acc-1", -5));
         assertEquals(1_000, ledger.balanceOf("acc-1"));
     }
+
+    @Test
+    void transferMovesMoney() {
+        Ledger ledger = new Ledger();
+        ledger.open("acc-1", 1_000);
+        ledger.open("acc-2", 200);
+
+        ledger.transfer("acc-1", "acc-2", 300);
+
+        assertEquals(700, ledger.balanceOf("acc-1"));
+        assertEquals(500, ledger.balanceOf("acc-2"));
+    }
+
+    @Test
+    void transferWithInsufficientFundsLeavesBothUntouched() {
+        Ledger ledger = new Ledger();
+        ledger.open("acc-1", 100);
+        ledger.open("acc-2", 200);
+
+        assertThrows(IllegalStateException.class, () -> ledger.transfer("acc-1", "acc-2", 101));
+        assertEquals(100, ledger.balanceOf("acc-1"));
+        assertEquals(200, ledger.balanceOf("acc-2"));
+    }
+
+    @Test
+    void transferToSameAccountIsRejected() {
+        Ledger ledger = new Ledger();
+        ledger.open("acc-1", 1_000);
+
+        assertThrows(IllegalArgumentException.class, () -> ledger.transfer("acc-1", "acc-1", 100));
+    }
 }
