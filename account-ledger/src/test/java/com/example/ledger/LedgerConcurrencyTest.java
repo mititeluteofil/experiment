@@ -1,8 +1,11 @@
 package com.example.ledger;
 
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -80,5 +83,44 @@ class LedgerConcurrencyTest {
         }
 
         assertEquals(2_000_000, ledger.balanceOf("acc-A") + ledger.balanceOf("acc-B"));
+    }
+
+    @Test
+    void moneyIsConservedUnderConcurrentRandomTransfers() throws InterruptedException {
+        List<String> accountIds = List.of("acc-0", "acc-1", "acc-2", "acc-3");
+        Ledger ledger = new Ledger();
+        accountIds.forEach(id -> ledger.open(id, 10_000));
+        CountDownLatch startGate = new CountDownLatch(1);
+
+        ExecutorService executor = Executors.newFixedThreadPool(8);
+        try {
+            for (int t = 0; t < 8; t++) {
+                executor.submit(() -> {
+                    startGate.await();
+                    ThreadLocalRandom random = ThreadLocalRandom.current();
+                    for (int i = 0; i < 2_000; i++) {
+                        String from = accountIds.get(random.nextInt(accountIds.size()));
+                        String to = accountIds.get(random.nextInt(accountIds.size()));
+                        if (from.equals(to)) {
+                            continue;
+                        }
+                        try {
+                            ledger.transfer(from, to, random.nextLong(1, 100));
+                        } catch (IllegalStateException insufficientFunds) {
+                            // fine -- conservation is what we assert
+                        }
+                    }
+                    return null;
+                });
+            }
+            startGate.countDown();
+            executor.shutdown();
+            assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
+        } finally {
+            executor.shutdownNow();
+        }
+
+        long total = accountIds.stream().mapToLong(ledger::balanceOf).sum();
+        assertEquals(40_000, total);
     }
 }
