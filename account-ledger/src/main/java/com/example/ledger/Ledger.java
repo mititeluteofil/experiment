@@ -47,8 +47,11 @@ public class Ledger {
         requirePositive(amount);
         Account from = require(fromId);
         Account to = require(toId);
-        synchronized (from) {  // caller-supplied lock order: deadlock waiting for crossing transfers
-            synchronized (to) {
+        // global acquisition order (by id) removes circular wait: deadlock impossible by construction
+        Account first = from.id().compareTo(to.id()) < 0 ? from : to;
+        Account second = first == from ? to : from;
+        synchronized (first) {
+            synchronized (second) {
                 from.subtract(amount);
                 to.add(amount);
             }
